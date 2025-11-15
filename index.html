@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор энергосбережения для дома</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2E7D32;
+            --secondary-color: #4CAF50;
+            --accent-color: #8BC34A;
+            --light-color: #E8F5E9;
+            --dark-color: #1B5E20;
+            --text-color: #333;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: var(--shadow);
+        }
+        
+        header h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        header p {
+            text-align: center;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .input-section, .results-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .input-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .results-section {
+            flex: 2;
+            min-width: 300px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+        
+        button:hover {
+            background-color: var(--dark-color);
+        }
+        
+        .improvements {
+            margin-top: 20px;
+        }
+        
+        .improvement-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .improvement-item input {
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .results-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .result-card {
+            flex: 1;
+            min-width: 200px;
+            background-color: var(--light-color);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .result-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 10px 0;
+        }
+        
+        .chart-container {
+            margin-top: 20px;
+            height: 300px;
+        }
+        
+        .tips-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: var(--shadow);
+        }
+        
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .tip-card {
+            background-color: var(--light-color);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+        }
+        
+        .tip-card h4 {
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+        
+        footer {
+            background-color: var(--dark-color);
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 40px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Калькулятор энергосбережения для дома</h1>
+            <p>Узнайте, как снизить потребление энергии и сэкономить на коммунальных платежах</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <section class="input-section">
+                <h2>Данные о вашем доме</h2>
+                <form id="house-data-form">
+                    <div class="form-group">
+                        <label for="house-type">Тип дома</label>
+                        <select id="house-type">
+                            <option value="apartment">Квартира</option>
+                            <option value="house">Частный дом</option>
+                            <option value="townhouse">Таунхаус</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="area">Площадь (м²)</label>
+                        <input type="number" id="area" min="20" max="500" value="70">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="residents">Количество жильцов</label>
+                        <input type="number" id="residents" min="1" max="20" value="3">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="windows">Количество окон</label>
+                        <input type="number" id="windows" min="1" max="50" value="5">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="heating">Тип отопления</label>
+                        <select id="heating">
+                            <option value="gas">Газовое</option>
+                            <option value="electric">Электрическое</option>
+                            <option value="district">Центральное</option>
+                            <option value="wood">Дровяное</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bulbs">Тип лампочек</label>
+                        <select id="bulbs">
+                            <option value="incandescent">Лампы накаливания</option>
+                            <option value="halogen">Галогенные</option>
+                            <option value="fluorescent">Люминесцентные</option>
+                            <option value="led" selected>LED</option>
+                        </select>
+                    </div>
+                    
+                    <button type="button" id="calculate-btn">Рассчитать</button>
+                </form>
+                
+                <div class="improvements">
+                    <h3>Энергосберегающие улучшения</h3>
+                    <div class="improvement-item">
+                        <input type="checkbox" id="improvement-windows">
+                        <label for="improvement-windows">Замена окон на энергоэффективные</label>
+                    </div>
+                    <div class="improvement-item">
+                        <input type="checkbox" id="improvement-insulation">
+                        <label for="improvement-insulation">Утепление стен и крыши</label>
+                    </div>
+                    <div class="improvement-item">
+                        <input type="checkbox" id="improvement-solar">
+                        <label for="improvement-solar">Установка солнечных панелей</label>
+                    </div>
+                    <div class="improvement-item">
+                        <input type="checkbox" id="improvement-led">
+                        <label for="improvement-led">Замена всех ламп на LED</label>
+                    </div>
+                    <div class="improvement-item">
+                        <input type="checkbox" id="improvement-thermostat">
+                        <label for="improvement-thermostat">Умный термостат</label>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="results-section">
+                <h2>Результаты расчета</h2>
+                <div class="results-container">
+                    <div class="result-card">
+                        <h3>Текущее потребление</h3>
+                        <div class="result-value" id="current-energy">0 кВт·ч/год</div>
+                        <p>Энергопотребление</p>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3>После улучшений</h3>
+                        <div class="result-value" id="improved-energy">0 кВт·ч/год</div>
+                        <p>Энергопотребление</p>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3>Экономия</h3>
+                        <div class="result-value" id="savings-energy">0 кВт·ч/год</div>
+                        <p>Сэкономленная энергия</p>
+                    </div>
+                    
+                    <div class="result-card">
+                        <h3>Снижение CO₂</h3>
+                        <div class="result-value" id="co2-reduction">0 кг/год</div>
+                        <p>Сокращение выбросов</p>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="energy-chart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="co2-chart"></canvas>
+                </div>
+            </section>
+        </div>
+        
+        <section class="tips-section">
+            <h2>Полезные советы по энергосбережению</h2>
+            <div class="tips-grid">
+                <div class="tip-card">
+                    <h4>Эффективное отопление</h4>
+                    <p>Установите программируемый термостат и снижайте температуру на ночь или когда вас нет дома.</p>
+                </div>
+                <div class="tip-card">
+                    <h4>Энергоэффективные окна</h4>
+                    <p>Замена старых окон на современные двух- или трехкамерные стеклопакеты может сократить потери тепла до 50%.</p>
+                </div>
+                <div class="tip-card">
+                    <h4>Утепление дома</h4>
+                    <p>Правильное утепление стен, пола и крыши значительно снижает расходы на отопление зимой и кондиционирование летом.</p>
+                </div>
+                <div class="tip-card">
+                    <h4>LED-освещение</h4>
+                    <p>Светодиодные лампы потребляют на 80% меньше энергии и служат в 25 раз дольше, чем лампы накаливания.</p>
+                </div>
+                <div class="tip-card">
+                    <h4>Энергоэффективная техника</h4>
+                    <p>При покупке новой техники обращайте внимание на класс энергоэффективности (А+++ самый экономичный).</p>
+                </div>
+                <div class="tip-card">
+                    <h4>Солнечные панели</h4>
+                    <p>Установка солнечных батарей позволяет вырабатывать собственную электроэнергию и сократить счета за электричество.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <footer>
+        <div class="container">
+            <p>Калькулятор энергосбережения для дома &copy; 2025</p>
+            <p>Сайт разработан студентами 2 курса ГАПОУ "Альметьевский политехнический техникум" Маскиной М.М. и Мухановым Д.А.</p>
+        </div>
+    </footer>
+    
+    <script>
+        // Инициализация графиков
+        const energyCtx = document.getElementById('energy-chart').getContext('2d');
+        const co2Ctx = document.getElementById('co2-chart').getContext('2d');
+        
+        const energyChart = new Chart(energyCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Текущее', 'После улучшений'],
+                datasets: [{
+                    label: 'Энергопотребление (кВт·ч/год)',
+                    data: [0, 0],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        const co2Chart = new Chart(co2Ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Текущее', 'После улучшений'],
+                datasets: [{
+                    label: 'Выбросы CO₂ (кг/год)',
+                    data: [0, 0],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Расчет энергопотребления
+        function calculateEnergyConsumption() {
+            // Получаем значения из формы
+            const houseType = document.getElementById('house-type').value;
+            const area = parseInt(document.getElementById('area').value);
+            const residents = parseInt(document.getElementById('residents').value);
+            const windows = parseInt(document.getElementById('windows').value);
+            const heating = document.getElementById('heating').value;
+            const bulbs = document.getElementById('bulbs').value;
+            
+            // Базовые коэффициенты для расчета
+            let baseConsumption = 0;
+            
+            // Расчет базового потребления в зависимости от типа дома
+            switch(houseType) {
+                case 'apartment':
+                    baseConsumption = area * 120; // кВт·ч/год на м²
+                    break;
+                case 'house':
+                    baseConsumption = area * 180;
+                    break;
+                case 'townhouse':
+                    baseConsumption = area * 150;
+                    break;
+            }
+            
+            // Корректировка по количеству жильцов
+            baseConsumption += residents * 300;
+            
+            // Корректировка по количеству окон
+            baseConsumption += windows * 50;
+            
+            // Корректировка по типу отопления
+            let heatingMultiplier = 1;
+            switch(heating) {
+                case 'gas':
+                    heatingMultiplier = 0.8;
+                    break;
+                case 'electric':
+                    heatingMultiplier = 1.2;
+                    break;
+                case 'district':
+                    heatingMultiplier = 0.9;
+                    break;
+                case 'wood':
+                    heatingMultiplier = 1.1;
+                    break;
+            }
+            baseConsumption *= heatingMultiplier;
+            
+            // Корректировка по типу лампочек
+            let bulbMultiplier = 1;
+            switch(bulbs) {
+                case 'incandescent':
+                    bulbMultiplier = 1.2;
+                    break;
+                case 'halogen':
+                    bulbMultiplier = 1.1;
+                    break;
+                case 'fluorescent':
+                    bulbMultiplier = 0.7;
+                    break;
+                case 'led':
+                    bulbMultiplier = 0.5;
+                    break;
+            }
+            baseConsumption *= bulbMultiplier;
+            
+            return Math.round(baseConsumption);
+        }
+        
+        // Расчет выбросов CO2
+        function calculateCO2Emissions(energyConsumption, heatingType) {
+            // Коэффициенты выбросов CO2 в кг на кВт·ч
+            let emissionFactor = 0;
+            
+            switch(heatingType) {
+                case 'gas':
+                    emissionFactor = 0.2;
+                    break;
+                case 'electric':
+                    emissionFactor = 0.5; // зависит от источника электроэнергии
+                    break;
+                case 'district':
+                    emissionFactor = 0.3;
+                    break;
+                case 'wood':
+                    emissionFactor = 0.4; // зависит от типа древесины
+                    break;
+            }
+            
+            return Math.round(energyConsumption * emissionFactor);
+        }
+        
+        // Расчет эффекта от улучшений
+        function calculateImprovementsEffect(baseConsumption, heatingType) {
+            let improvedConsumption = baseConsumption;
+            let improvementsApplied = [];
+            
+            // Замена окон
+            if (document.getElementById('improvement-windows').checked) {
+                improvedConsumption *= 0.9; // снижение на 10%
+                improvementsApplied.push('windows');
+            }
+            
+            // Утепление
+            if (document.getElementById('improvement-insulation').checked) {
+                improvedConsumption *= 0.85; // снижение на 15%
+                improvementsApplied.push('insulation');
+            }
+            
+            // Солнечные панели
+            if (document.getElementById('improvement-solar').checked) {
+                improvedConsumption *= 0.7; // снижение на 30%
+                improvementsApplied.push('solar');
+            }
+            
+            // LED-лампы
+            if (document.getElementById('improvement-led').checked) {
+                improvedConsumption *= 0.9; // снижение на 10%
+                improvementsApplied.push('led');
+            }
+            
+            // Умный термостат
+            if (document.getElementById('improvement-thermostat').checked) {
+                improvedConsumption *= 0.95; // снижение на 5%
+                improvementsApplied.push('thermostat');
+            }
+            
+            return {
+                consumption: Math.round(improvedConsumption),
+                improvements: improvementsApplied
+            };
+        }
+        
+        // Обновление интерфейса с результатами
+        function updateResults() {
+            const baseConsumption = calculateEnergyConsumption();
+            const heatingType = document.getElementById('heating').value;
+            const baseCO2 = calculateCO2Emissions(baseConsumption, heatingType);
+            
+            const improvements = calculateImprovementsEffect(baseConsumption, heatingType);
+            const improvedConsumption = improvements.consumption;
+            const improvedCO2 = calculateCO2Emissions(improvedConsumption, heatingType);
+            
+            const energySavings = baseConsumption - improvedConsumption;
+            const co2Reduction = baseCO2 - improvedCO2;
+            
+            // Обновляем значения на странице
+            document.getElementById('current-energy').textContent = baseConsumption.toLocaleString() + ' кВт·ч/год';
+            document.getElementById('improved-energy').textContent = improvedConsumption.toLocaleString() + ' кВт·ч/год';
+            document.getElementById('savings-energy').textContent = energySavings.toLocaleString() + ' кВт·ч/год';
+            document.getElementById('co2-reduction').textContent = co2Reduction.toLocaleString() + ' кг/год';
+            
+            // Обновляем графики
+            energyChart.data.datasets[0].data = [baseConsumption, improvedConsumption];
+            energyChart.update();
+            
+            co2Chart.data.datasets[0].data = [baseCO2, improvedCO2];
+            co2Chart.update();
+        }
+        
+        // Обработчик события для кнопки расчета
+        document.getElementById('calculate-btn').addEventListener('click', updateResults);
+        
+        // Обработчики событий для чекбоксов улучшений
+        const improvementCheckboxes = document.querySelectorAll('.improvement-item input');
+        improvementCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateResults);
+        });
+        
+        // Первоначальный расчет при загрузке страницы
+        window.addEventListener('load', updateResults);
+    </script>
+</body>
+</html>
